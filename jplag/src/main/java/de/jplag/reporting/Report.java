@@ -33,6 +33,10 @@ public class Report { // Mostly legacy code with some minor improvements.
 
     private static final String CSV_FILE = "matches_avg.csv";
     private static final String[] PICS = {"forward.gif", "back.gif"};
+    //info
+    public static HashMap<String,String> Info = new HashMap<>();
+    public String temp = "";
+    public String matchTemp = "";
 
     private final Map<JPlagComparison, Integer> comparisonToIndex = new HashMap<>();
     private final Messages msg;
@@ -61,6 +65,7 @@ public class Report { // Mostly legacy code with some minor improvements.
         writeMatches(result.getComparisons(options.getMaximumNumberOfComparisons()));
         System.out.println("Report exported to " + reportDir.getAbsolutePath());
     }
+
 
     /*
      * Two colors, represented by Rl,Gl,Bl and Rh,Gh,Bh respectively are mixed according to the percentage "percent"
@@ -135,11 +140,17 @@ public class Report { // Mostly legacy code with some minor improvements.
     /**
      * This method generates an table entry in the list of all comparisons.
      */
-    private void reportComparison(HTMLFile htmlFile, JPlagComparison comparison, int index) {
+    private void reportComparison(HTMLFile htmlFile, JPlagComparison comparison, int index, String temp) {
         Match match;
         TokenList tokensA = comparison.getFirstSubmission().getTokenList();
         TokenList tokensB = comparison.getSecondSubmission().getTokenList();
         // sort();
+
+        matchTemp += "<TABLE BORDER=\"1\" CELLSPACING=\"0\" BGCOLOR=\"#d0d0d0\">";
+        matchTemp += "<TR><TH><TH>" + comparison.getFirstSubmission().getName() + " (" + comparison.similarityOfFirst() + "%)<TH>"
+                + comparison.getSecondSubmission().getName() + " (" + comparison.similarityOfSecond() + "%)<TH>"
+                + msg.getString("AllMatches.Tokens");
+
 
         htmlFile.println("<TABLE BORDER=\"1\" CELLSPACING=\"0\" BGCOLOR=\"#d0d0d0\">");
         htmlFile.println("<TR><TH><TH>" + comparison.getFirstSubmission().getName() + " (" + comparison.similarityOfFirst() + "%)<TH>"
@@ -156,6 +167,15 @@ public class Report { // Mostly legacy code with some minor improvements.
 
             String col = Color.getHexadecimalValue(i);
 
+
+
+            matchTemp += "<TR><TD BGCOLOR=\"" + col + "\"><FONT COLOR=\"" + col + "\">-</FONT>";
+            matchTemp += "<TD><A HREF=\"javascript:ZweiFrames('match" + index + "-0.html#" + i + "',2,'match" + index + "-1.html#" + i
+                    + "',3)\" NAME=\"" + i + "\">";
+            matchTemp += new String(startA.file.getBytes());
+
+
+
             htmlFile.print("<TR><TD BGCOLOR=\"" + col + "\"><FONT COLOR=\"" + col + "\">-</FONT>");
             htmlFile.print("<TD><A HREF=\"javascript:ZweiFrames('match" + index + "-0.html#" + i + "',2,'match" + index + "-1.html#" + i
                     + "',3)\" NAME=\"" + i + "\">");
@@ -163,9 +183,15 @@ public class Report { // Mostly legacy code with some minor improvements.
 
             if (result.getOptions().getLanguage().usesIndex()) {
                 htmlFile.print("(" + startA.getIndex() + "-" + endA.getIndex() + ")");
+                matchTemp += "(" + startA.getIndex() + "-" + endA.getIndex() + ")";
             } else {
                 htmlFile.print("(" + startA.getLine() + "-" + endA.getLine() + ")");
+                matchTemp += "(" + startA.getLine() + "-" + endA.getLine() + ")";
             }
+            matchTemp += "<TD><A HREF=\"javascript:ZweiFrames('match" + index + "-0.html#" + i + "',2,'match" + index + "-1.html#" + i
+                    + "',3)\" NAME=\"" + i + "\">";
+            matchTemp += startB.file;
+
 
             htmlFile.print("<TD><A HREF=\"javascript:ZweiFrames('match" + index + "-0.html#" + i + "',2,'match" + index + "-1.html#" + i
                     + "',3)\" NAME=\"" + i + "\">");
@@ -173,21 +199,30 @@ public class Report { // Mostly legacy code with some minor improvements.
 
             if (result.getOptions().getLanguage().usesIndex()) {
                 htmlFile.print("(" + startB.getIndex() + "-" + endB.getIndex());
+                matchTemp += "(" + startB.getIndex() + "-" + endB.getIndex();
             } else {
                 htmlFile.print("(" + startB.getLine() + "-" + endB.getLine());
+                matchTemp += "(" + startB.getLine() + "-" + endB.getLine();
             }
 
             htmlFile.println(
                     ")</A><TD ALIGN=center>" + "<FONT COLOR=\"" + comparison.color(match.getLength()) + "\">" + match.getLength() + "</FONT>");
+            matchTemp += ")</A><TD ALIGN=center>" + "<FONT COLOR=\"" + comparison.color(match.getLength()) + "\">" + match.getLength() + "</FONT>";
         }
 
         if (result.getOptions().hasBaseCode()) {
             htmlFile.print(
                     "<TR><TD BGCOLOR=\"#C0C0C0\"><TD>" + msg.getString("AllMatches.Basecode") + " " + comparison.basecodeSimilarityOfFirst() + "%");
             htmlFile.println("<TD>" + msg.getString("AllMatches.Basecode") + " " + comparison.basecodeSimilarityOfSecond() + "%<TD>&nbsp;");
+
+            matchTemp += "<TR><TD BGCOLOR=\"#C0C0C0\"><TD>" + msg.getString("AllMatches.Basecode") + " " + comparison.basecodeSimilarityOfFirst() + "%";
+            matchTemp += "<TD>" + msg.getString("AllMatches.Basecode") + " " + comparison.basecodeSimilarityOfSecond() + "%<TD>&nbsp;";
         }
 
         htmlFile.println("</TABLE>");
+        matchTemp += "</TABLE>";
+
+        //완료
     }
 
     private synchronized void reportMatchWritingProgress(List<JPlagComparison> comparisons) {
@@ -228,32 +263,45 @@ public class Report { // Mostly legacy code with some minor improvements.
             }
         }
 
+        temp += "<H4>" + this.msg.getString("Report.Distribution") + ":</H4>\n<CENTER>";
+        temp += "<TABLE CELLPADDING=1 CELLSPACING=1>";
+
         htmlFile.println("<H4>" + this.msg.getString("Report.Distribution") + ":</H4>\n<CENTER>");
         htmlFile.println("<TABLE CELLPADDING=1 CELLSPACING=1>");
 
         for (int i = 9; i >= 0; i--) {
             htmlFile.print("<TR BGCOLOR=" + color(i * 10 + 10, 128, 192, 128, 192, 255, 255) + "><TD ALIGN=center>" + (i * 10) + "% - "
                     + (i * 10 + 10) + "%" + "</TD><TD ALIGN=right>" + similarityDistribution[i] + "</TD><TD>");
-
+            temp += "<TR BGCOLOR=" + color(i * 10 + 10, 128, 192, 128, 192, 255, 255) + "><TD ALIGN=center>" + (i * 10) + "% - "
+                    + (i * 10 + 10) + "%" + "</TD><TD ALIGN=right>" + similarityDistribution[i] + "</TD><TD>";
             for (int j = (similarityDistribution[i] * barLength / max); j > 0; j--) {
                 htmlFile.print("#");
+                temp += "#";
             }
 
             if (similarityDistribution[i] * barLength / max == 0) {
                 if (similarityDistribution[i] == 0) {
                     htmlFile.print(".");
+                    temp += ".";
                 } else {
                     htmlFile.print("#");
+                    temp += "#";
                 }
             }
 
             htmlFile.println("</TD></TR>");
+            temp += "</TD></TR>";
         }
 
         htmlFile.println("</TABLE></CENTER>\n<P>\n<HR>");
+        temp += "</TABLE></CENTER>\n<P>\n<HR>";
     }
 
     private void writeHTMLHeader(HTMLFile file, String title) {
+        temp += "<!DOCTYPE HTML PUBLIC  \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n" +
+                "<HTML><HEAD><TITLE>" + title + "</TITLE><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></HEAD>";
+        matchTemp += "<!DOCTYPE HTML PUBLIC  \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n" +
+                "<HTML><HEAD><TITLE>" + title + "</TITLE><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></HEAD>";
         file.println("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">");
         file.println("<HTML><HEAD><TITLE>" + title + "</TITLE>");
         file.println("<META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
@@ -264,11 +312,15 @@ public class Report { // Mostly legacy code with some minor improvements.
      * i is the number of the match j == 0 if subA is considered, otherwise (j must then be 1) it is subB This procedure
      * makes use of the column and length information!
      */
-    private int writeImprovedSubmission(HTMLFile f, int i, JPlagComparison comparison, int j) throws ReportGenerationException {
+
+    //이거 match0.html 만드는 함수임
+    private int writeImprovedSubmission(HTMLFile f, int i, JPlagComparison comparison, int j, String temp) throws ReportGenerationException {
         Submission sub = comparison.getSubmission(j == 0);
         String[] files = comparison.files(j);
         String[][] text = sub.readFiles(files);
         TokenList tokens = comparison.getSubmission(j == 0).getTokenList();
+
+
 
         // Markup list:
         Comparator<MarkupText> comp = (mo1, mo2) -> {
@@ -375,9 +427,24 @@ public class Report { // Mostly legacy code with some minor improvements.
             }
         }
 
+
+
+        this.matchTemp += "<div style=\"flex-grow: 1;\">";
+
         f.println("<div style=\"flex-grow: 1;\">");
 
+
+
         for (int x = 0; x < text.length; x++) {
+            this.matchTemp += "<h3>";
+            this.matchTemp += "<center>";
+            this.matchTemp += "<span>" + sub.getName() + "</span>";
+            this.matchTemp += "<span> - </span>";
+            this.matchTemp += "<span>" + files[x] + "</span>";
+            this.matchTemp += "</center>";
+            this.matchTemp += "</h3>";
+            this.matchTemp += "<HR>";
+
             f.println("<h3>");
             f.println("<center>");
             f.println("<span>" + sub.getName() + "</span>");
@@ -387,22 +454,29 @@ public class Report { // Mostly legacy code with some minor improvements.
             f.println("</h3>");
             f.println("<HR>");
             if (result.getOptions().getLanguage().isPreformatted()) {
+                this.matchTemp += "<PRE>";
                 f.println("<PRE>");
             }
             for (int y = 0; y < text[x].length; y++) {
                 f.print(text[x][y]);
+                this.matchTemp += text[x][y];
                 if (!result.getOptions().getLanguage().isPreformatted()) {
+                    this.matchTemp += "<BR>";
                     f.println("<BR>");
                 } else {
+                    this.matchTemp += "\n";
                     f.println();
                 }
             }
             if (result.getOptions().getLanguage().isPreformatted()) {
                 f.println("</PRE>");
+                this.matchTemp += "</PRE>";
             }
         }
 
         f.println("</div>");
+        this.matchTemp += "</div>";
+
 
         return f.bytesWritten();
     }
@@ -431,6 +505,14 @@ public class Report { // Mostly legacy code with some minor improvements.
     private void writeIndexBegin(HTMLFile htmlFile, String title) {
         writeHTMLHeader(htmlFile, title);
 
+
+        temp += "<BODY BGCOLOR=#ffffff LINK=#000088 VLINK=#000000 TEXT=#000000><TABLE ALIGN=center CELLPADDING=2 CELLSPACING=1><TR VALIGN=middle ALIGN=center BGCOLOR=#ffffff><TD>" + "<IMG SRC=\"logo.png\" ALT=\"JPlag\" BORDER=0></TD><TD><H1><BIG>"
+                 + title + "</BIG></H1></TD></TR>" + "<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Language") + ":</TD><TD>" + result.getOptions().getLanguageOption().name() + "</TD></TR><TR BGCOLOR=#aaaaff VALIGN=top><TD>"
+                + msg.getString("Report.Submissions") + ":</TD><TD>" + result.getNumberOfSubmissions() + "</TD></TR>";
+        ;
+
+
+        ;
         htmlFile.println("<BODY BGCOLOR=#ffffff LINK=#000088 VLINK=#000000 TEXT=#000000>");
         htmlFile.println("<TABLE ALIGN=center CELLPADDING=2 CELLSPACING=1>");
         htmlFile.println("<TR VALIGN=middle ALIGN=center BGCOLOR=#ffffff><TD>" + "<IMG SRC=\"logo.png\" ALT=\"JPlag\" BORDER=0></TD>");
@@ -445,6 +527,8 @@ public class Report { // Mostly legacy code with some minor improvements.
         if (result.getOptions().hasBaseCode()) {
             htmlFile.print("<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Basecode_submission") + ":</TD>" + "<TD>"
                     + result.getOptions().getBaseCodeSubmissionName() + "</TD></TR>");
+            temp += "<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Basecode_submission") + ":</TD>" + "<TD>"
+                    + result.getOptions().getBaseCodeSubmissionName() + "</TD></TR>";
         }
 
         if (options.getMaximumNumberOfComparisons() > 0) {
@@ -453,6 +537,12 @@ public class Report { // Mostly legacy code with some minor improvements.
                     + msg.getString("Report.Treshold") + ": " + result.getOptions().getSimilarityThreshold() + "%)<br>");
 
             htmlFile.println("</TD></TR>");
+
+
+            temp += "<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Matches_displayed") + ":</TD>" + "<TD>";
+            temp += options.getMaximumNumberOfComparisons() + " of " + result.getComparisons().size() + " ("
+                    + msg.getString("Report.Treshold") + ": " + result.getOptions().getSimilarityThreshold() + "%)<br>";
+            temp += "</TD></TR>";
         }
 
         SimpleDateFormat dateFormat = new SimpleDateFormat();
@@ -463,13 +553,24 @@ public class Report { // Mostly legacy code with some minor improvements.
                 + msg.getString("Report.sensitivity") + "):</TD><TD>" + result.getOptions().getMinimumTokenMatch() + "</TD></TR>");
         htmlFile.println("<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Suffixes") + ":</TD><TD>");
 
+
+        temp += "<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Date") + ":</TD><TD>" + dateFormat.format(new Date()) + "</TD></TR>";
+        temp += "<TR BGCOLOR=#aaaaff>" + "<TD><EM>" + msg.getString("Report.Minimum_Match_Length") + "</EM> ("
+                + msg.getString("Report.sensitivity") + "):</TD><TD>" + result.getOptions().getMinimumTokenMatch() + "</TD></TR>";
+        temp += "<TR BGCOLOR=#aaaaff VALIGN=top><TD>" + msg.getString("Report.Suffixes") + ":</TD><TD>";
+
+
         String[] fileSuffixes = result.getOptions().getFileSuffixes();
 
         for (int i = 0; i < fileSuffixes.length; i++) {
             htmlFile.print(fileSuffixes[i] + (i < fileSuffixes.length - 1 ? ", " : "</TD></TR>\n"));
+            temp += fileSuffixes[i] + (i < fileSuffixes.length - 1 ? ", " : "</TD></TR>\n");
         }
 
+
         htmlFile.println("</TABLE>\n<HR>");
+        temp += "</TABLE>\n<HR>";
+
     }
 
     /*
@@ -550,12 +651,20 @@ public class Report { // Mostly legacy code with some minor improvements.
      * Write the end of the index.html file.
      */
     private void writeIndexEnd(HTMLFile htmlFile) {
+        this.temp += "<HR><P\n ALIGN=right><FONT SIZE=\"1\" FACE=\"helvetica\">JPlag</FONT></P></BODY>\n</HTML>";
         htmlFile.println("<HR>\n<P ALIGN=right><FONT SIZE=\"1\" FACE=\"helvetica\">JPlag</FONT></P>");
         htmlFile.println("</BODY>\n</HTML>");
+        Info.put("\nindex.html\n<<<<!@#!%%!@>>>>\n", temp);
     }
 
     private void writeLinksToComparisons(HTMLFile htmlFile, String headerStr, String csvFile) {
         List<JPlagComparison> comparisons = result.getComparisons(options.getMaximumNumberOfComparisons()); // should be already sorted!
+
+        temp += headerStr + " (<a href=\"help-sim-" + "en" // Country tag
+                + ".html\"><small><font color=\"#000088\">" + msg.getString("Report.WhatIsThis") + "</font></small></a>):</H4>";
+        temp += "<p><a href=\"" + csvFile + "\">download csv</a></p>";
+        temp += "<TABLE CELLPADDING=3 CELLSPACING=2>";
+
 
         htmlFile.println(headerStr + " (<a href=\"help-sim-" + "en" // Country tag
                 + ".html\"><small><font color=\"#000088\">" + msg.getString("Report.WhatIsThis") + "</font></small></a>):</H4>");
@@ -565,6 +674,15 @@ public class Report { // Mostly legacy code with some minor improvements.
         for (JPlagComparison comparison : comparisons) {
             String submissionNameA = comparison.getFirstSubmission().getName();
             String submissionNameB = comparison.getSecondSubmission().getName();
+
+            temp += "<TR><TD BGCOLOR=" + color(comparison.similarityOfFirst(), 128, 192, 128, 192, 255, 255) + ">" + submissionNameA
+                    + "</TD><TD><nobr>-&gt;</nobr>";
+            temp += "</TD><TD BGCOLOR=" + color(comparison.similarityOfSecond(), 128, 192, 128, 192, 255, 255)
+                    + " ALIGN=center><A HREF=\"match" + getComparisonIndex(comparison) + ".html\">" + submissionNameB + "</A><BR><FONT COLOR=\""
+                    + color(comparison.similarity(), 0, 255, 0, 0, 0, 0) + "\">(" + (((int) (comparison.similarity() * 10)) / (float) 10)
+                    + "%)</FONT>";
+            temp += "</TD></TR>";
+
 
             htmlFile.print("<TR><TD BGCOLOR=" + color(comparison.similarityOfFirst(), 128, 192, 128, 192, 255, 255) + ">" + submissionNameA
                     + "</TD><TD><nobr>-&gt;</nobr>");
@@ -579,14 +697,25 @@ public class Report { // Mostly legacy code with some minor improvements.
 
         htmlFile.println("</TABLE><P>\n");
         htmlFile.println("<!---->");
+        temp += "</TABLE><P>\n";
+        temp += "<!---->";
     }
 
     private void writeMatch(JPlagComparison comparison, int i) throws ReportGenerationException {
         HTMLFile htmlFile = createHTMLFile("match" + i + ".html");
 
+
         writeHTMLHeader(htmlFile, TagParser.parse(msg.getString("Report.Matches_for_X1_AND_X2"),
                 new String[] {comparison.getFirstSubmission().getName(), comparison.getSecondSubmission().getName()}));
 
+        matchTemp += "<body><div style=\"align-items: center; display: flex; justify-content: space-around;\"><div><h3 align=\"center\">";
+        matchTemp += TagParser.parse(msg.getString("Report.Matches_for_X1_AND_X2"),
+                new String[] {comparison.getFirstSubmission().getName(), comparison.getSecondSubmission().getName()});
+        matchTemp += "</h3><h1 align=\"center\">" + comparison.roundedSimilarity() + "</h1><center><a href=\"index.html\" target=\"_top\">"
+                + msg.getString("Report.INDEX") + "</a><span>-</span><a href=\"help-en.html\" target=\"_top\">"
+                + msg.getString("Report.HELP") + "</a></center></div><div>";
+
+        System.out.println("우어어어어거어가ㅓㄱ" + comparison.roundedSimilarity());
         htmlFile.println("<body>");
         htmlFile.println("  <div style=\"align-items: center; display: flex; justify-content: space-around;\">");
 
@@ -610,7 +739,8 @@ public class Report { // Mostly legacy code with some minor improvements.
         htmlFile.println("    </div>");
 
         htmlFile.println("    <div>");
-        reportComparison(htmlFile, comparison, i);
+        //여
+        reportComparison(htmlFile, comparison, i, matchTemp);
         htmlFile.println("    </div>");
 
         htmlFile.println("  </div>");
@@ -619,12 +749,20 @@ public class Report { // Mostly legacy code with some minor improvements.
 
         htmlFile.println("  <div style=\"display: flex;\">");
 
+        matchTemp+= "</div></div><hr><div style=\"display: flex;\">";
+
+        //이셋중에 하나만 하면 되지않나?!!?!?!
+
+        //스캐너의 토큰이 인덱싱된다면..?! 아래의 결과가 true인데.. 그게 뭔소리지..?
+        //i랑 j는 무슨 의미지?
+        //index랑 improve랑 normal이랑 무슨 차이야;;
         if (result.getOptions().getLanguage().usesIndex()) {
             writeIndexedSubmission(htmlFile, i, comparison, 0);
             writeIndexedSubmission(htmlFile, i, comparison, 1);
+            //Determines whether the parser provide column information.파서가 컬럼 정보를 지원하는지에 따라 결정된다고? 그게 무슨 소리지?
         } else if (result.getOptions().getLanguage().supportsColumns()) {
-            writeImprovedSubmission(htmlFile, i, comparison, 0);
-            writeImprovedSubmission(htmlFile, i, comparison, 1);
+            writeImprovedSubmission(htmlFile, i, comparison, 0, matchTemp);
+            writeImprovedSubmission(htmlFile, i, comparison, 1, matchTemp);
         } else {
             writeNormalSubmission(htmlFile, i, comparison, 0);
             writeNormalSubmission(htmlFile, i, comparison, 1);
@@ -635,6 +773,11 @@ public class Report { // Mostly legacy code with some minor improvements.
         htmlFile.println("</body>");
         htmlFile.println("</html>");
         htmlFile.close();
+
+        matchTemp += " </div></body></html>";
+
+        Info.put("\nmatch" + i + ".html\n<<<<!@#!%%!@>>>>\n", matchTemp);
+        matchTemp = "";
     }
 
     private void writeMatches(List<JPlagComparison> comparisons) {
@@ -751,10 +894,17 @@ public class Report { // Mostly legacy code with some minor improvements.
                 }
             }
         }
-
+        StringBuffer sb = new StringBuffer();
+        sb.append("<div style=\"flex-grow: 1;\">");
         f.println("<div style=\"flex-grow: 1;\">");
 
         for (int x = 0; x < text.length; x++) {
+            matchTemp+="<h3>";
+
+
+            //일단 여기까지만 하고 잘 출력이 되는지 봐보자
+
+
             f.println("<h3>");
             f.println("<center>");
             f.println("<span>" + sub.getName() + "</span>");

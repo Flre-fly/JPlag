@@ -15,6 +15,7 @@ import static de.jplag.CommandLineArgument.SUFFIXES;
 import static de.jplag.CommandLineArgument.VERBOSITY;
 
 import java.io.File;
+import java.util.List;
 import java.util.Random;
 
 import de.jplag.exceptions.ExitException;
@@ -50,15 +51,25 @@ public class CLI {
      */
     public static void main(String[] args) {
         try {
+
             CLI cli = new CLI();
-            Namespace arguments = cli.parseArguments(args);
-            JPlagOptions options = cli.buildOptionsFromArguments(arguments);
-            JPlag program = new JPlag(options);
-            System.out.println("JPlag initialized");
-            JPlagResult result = program.run();
-            File reportDir = new File(arguments.getString(RESULT_FOLDER.flagWithoutDash()));
-            Report report = new Report(reportDir, options);
+
+            JPlagOptions options = new JPlagOptions("C:\\Users\\User\\Desktop\\운영체제_test\\과제1\\2018", LanguageOption.JAVA);
+
+
+            JPlag jplag = new JPlag(options);
+            JPlagResult result = jplag.run();
+
+            List<JPlagComparison> comparisons = result.getComparisons();
+
+            File outputDir = new File("C:\\Users\\User\\test");
+            outputDir.mkdir();
+            Report report = new Report(outputDir, options);
+
+            System.out.println();
             report.writeResult(result);
+            System.out.println(report.Info);
+
         } catch (ExitException exception) {
             System.out.println("Error: " + exception.getMessage());
             System.exit(1);
