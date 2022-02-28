@@ -57,7 +57,7 @@ public class CLI {
 
             CLI cli = new CLI();
 
-            JPlagOptions options = new JPlagOptions("C:\\Users\\User\\Desktop\\운영체제_test\\과제1\\2018", LanguageOption.JAVA);
+            JPlagOptions options = new JPlagOptions("C:/Users/User/Desktop/운영체제", LanguageOption.JAVA);
 
 
             JPlag jplag = new JPlag(options);
@@ -66,11 +66,14 @@ public class CLI {
             List<JPlagComparison> comparisons = result.getComparisons();
 
             File outputDir = new File("C:\\Users\\User\\test");
+            if (outputDir.exists()){
+                outputDir.delete();
+            }
             outputDir.mkdir();
             Report report = new Report(outputDir, options);
 
             //System.out.println();
-            //report.writeResult(result);
+            report.writeResult(result);
             //System.out.println(report.Info);
             //outputDir에서 파일을 읽어서 출력하는거야
 
