@@ -57,7 +57,7 @@ public class CLI {
 
             CLI cli = new CLI();
 
-            JPlagOptions options = new JPlagOptions("C:/Users/User/Desktop/운영체제", LanguageOption.JAVA);
+            JPlagOptions options = new JPlagOptions(args[0], LanguageOption.JAVA);
 
 
             JPlag jplag = new JPlag(options);
