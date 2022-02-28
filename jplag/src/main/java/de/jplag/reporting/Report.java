@@ -8,13 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import de.jplag.JPlagComparison;
 import de.jplag.JPlagResult;
@@ -34,7 +28,7 @@ public class Report { // Mostly legacy code with some minor improvements.
     private static final String CSV_FILE = "matches_avg.csv";
     private static final String[] PICS = {"forward.gif", "back.gif"};
     //info
-    public static HashMap<String,String> Info = new HashMap<>();
+    public static Map<String,String> Info = Collections.synchronizedMap(new HashMap<String, String>());
     public String temp = "";
     public String matchTemp = "";
 
@@ -140,7 +134,7 @@ public class Report { // Mostly legacy code with some minor improvements.
     /**
      * This method generates an table entry in the list of all comparisons.
      */
-    private void reportComparison(HTMLFile htmlFile, JPlagComparison comparison, int index, String temp) {
+    private void reportComparison(HTMLFile htmlFile, JPlagComparison comparison, int index) {
         Match match;
         TokenList tokensA = comparison.getFirstSubmission().getTokenList();
         TokenList tokensB = comparison.getSecondSubmission().getTokenList();
@@ -298,10 +292,15 @@ public class Report { // Mostly legacy code with some minor improvements.
     }
 
     private void writeHTMLHeader(HTMLFile file, String title) {
-        temp += "<!DOCTYPE HTML PUBLIC  \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n" +
-                "<HTML><HEAD><TITLE>" + title + "</TITLE><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></HEAD>";
-        matchTemp += "<!DOCTYPE HTML PUBLIC  \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n" +
-                "<HTML><HEAD><TITLE>" + title + "</TITLE><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></HEAD>";
+        if (title.equals("Search Results")){
+            temp += "<!DOCTYPE HTML PUBLIC  \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n" +
+                    "<HTML><HEAD><TITLE>" + title + "</TITLE><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></HEAD>";
+        }
+       else{
+            matchTemp += "<!DOCTYPE HTML PUBLIC  \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n" +
+                    "<HTML><HEAD><TITLE>" + title + "</TITLE><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></HEAD>";
+        }
+
         file.println("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">");
         file.println("<HTML><HEAD><TITLE>" + title + "</TITLE>");
         file.println("<META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
@@ -314,7 +313,7 @@ public class Report { // Mostly legacy code with some minor improvements.
      */
 
     //이거 match0.html 만드는 함수임
-    private int writeImprovedSubmission(HTMLFile f, int i, JPlagComparison comparison, int j, String temp) throws ReportGenerationException {
+    private int writeImprovedSubmission(HTMLFile f, int i, JPlagComparison comparison, int j) throws ReportGenerationException {
         Submission sub = comparison.getSubmission(j == 0);
         String[] files = comparison.files(j);
         String[][] text = sub.readFiles(files);
@@ -702,6 +701,7 @@ public class Report { // Mostly legacy code with some minor improvements.
     }
 
     private void writeMatch(JPlagComparison comparison, int i) throws ReportGenerationException {
+        matchTemp = "";
         HTMLFile htmlFile = createHTMLFile("match" + i + ".html");
 
 
@@ -711,11 +711,10 @@ public class Report { // Mostly legacy code with some minor improvements.
         matchTemp += "<body><div style=\"align-items: center; display: flex; justify-content: space-around;\"><div><h3 align=\"center\">";
         matchTemp += TagParser.parse(msg.getString("Report.Matches_for_X1_AND_X2"),
                 new String[] {comparison.getFirstSubmission().getName(), comparison.getSecondSubmission().getName()});
-        matchTemp += "</h3><h1 align=\"center\">" + comparison.roundedSimilarity() + "</h1><center><a href=\"index.html\" target=\"_top\">"
+        matchTemp += "</h3><h1 align=\"center\">" + comparison.roundedSimilarity() + "%</h1><center><a href=\"index.html\" target=\"_top\">"
                 + msg.getString("Report.INDEX") + "</a><span>-</span><a href=\"help-en.html\" target=\"_top\">"
                 + msg.getString("Report.HELP") + "</a></center></div><div>";
 
-        System.out.println("우어어어어거어가ㅓㄱ" + comparison.roundedSimilarity());
         htmlFile.println("<body>");
         htmlFile.println("  <div style=\"align-items: center; display: flex; justify-content: space-around;\">");
 
@@ -725,6 +724,7 @@ public class Report { // Mostly legacy code with some minor improvements.
                 new String[] {comparison.getFirstSubmission().getName(), comparison.getSecondSubmission().getName()}));
         htmlFile.println("      </h3>");
         htmlFile.println("      <h1 align=\"center\">");
+        System.out.println(comparison.roundedSimilarity());
         htmlFile.println("        " + comparison.roundedSimilarity() + "%");
         htmlFile.println("      </h1>");
         htmlFile.println("      <center>");
@@ -740,7 +740,7 @@ public class Report { // Mostly legacy code with some minor improvements.
 
         htmlFile.println("    <div>");
         //여
-        reportComparison(htmlFile, comparison, i, matchTemp);
+        reportComparison(htmlFile, comparison, i);
         htmlFile.println("    </div>");
 
         htmlFile.println("  </div>");
@@ -761,8 +761,8 @@ public class Report { // Mostly legacy code with some minor improvements.
             writeIndexedSubmission(htmlFile, i, comparison, 1);
             //Determines whether the parser provide column information.파서가 컬럼 정보를 지원하는지에 따라 결정된다고? 그게 무슨 소리지?
         } else if (result.getOptions().getLanguage().supportsColumns()) {
-            writeImprovedSubmission(htmlFile, i, comparison, 0, matchTemp);
-            writeImprovedSubmission(htmlFile, i, comparison, 1, matchTemp);
+            writeImprovedSubmission(htmlFile, i, comparison, 0);
+            writeImprovedSubmission(htmlFile, i, comparison, 1);
         } else {
             writeNormalSubmission(htmlFile, i, comparison, 0);
             writeNormalSubmission(htmlFile, i, comparison, 1);
@@ -776,8 +776,12 @@ public class Report { // Mostly legacy code with some minor improvements.
 
         matchTemp += " </div></body></html>";
 
+        if(i == 2){
+            int s = 0;
+            //i == 1이든 2이든 info.put을 지나면 size1 -> size3으로 변함.. 왜저ㅐㄹ;
+            //\n때문은 아니고... 뭐지............?
+        }
         Info.put("\nmatch" + i + ".html\n<<<<!@#!%%!@>>>>\n", matchTemp);
-        matchTemp = "";
     }
 
     private void writeMatches(List<JPlagComparison> comparisons) {

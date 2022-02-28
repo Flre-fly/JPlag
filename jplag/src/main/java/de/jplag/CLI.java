@@ -15,6 +15,9 @@ import static de.jplag.CommandLineArgument.SUFFIXES;
 import static de.jplag.CommandLineArgument.VERBOSITY;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
@@ -66,13 +69,32 @@ public class CLI {
             outputDir.mkdir();
             Report report = new Report(outputDir, options);
 
-            System.out.println();
-            report.writeResult(result);
-            System.out.println(report.Info);
+            //System.out.println();
+            //report.writeResult(result);
+            //System.out.println(report.Info);
+            //outputDir에서 파일을 읽어서 출력하는거야
 
+            for(File file: outputDir.listFiles()) {
+                String fileName = file.getName();
+                String ext = fileName.substring(fileName.lastIndexOf(".") + 1);
+                if (ext.equals("html")){
+                    FileReader file_reader = new FileReader(file);
+                    int cur = 0;
+                    while((cur = file_reader.read()) != -1){
+                        System.out.print((char)cur);
+                    }
+                    file_reader.close();
+                }
+
+
+            }
         } catch (ExitException exception) {
             System.out.println("Error: " + exception.getMessage());
             System.exit(1);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
